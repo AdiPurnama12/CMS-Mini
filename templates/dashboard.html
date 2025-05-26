@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - CMS Mini{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>Dashboard</h1>
+    <a href="{{ url_for('create_post') }}" class="btn btn-primary btn-new-post">
+        <i class="fas fa-plus-circle btn-icon"></i> Buat Post Baru
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2>Daftar Post</h2>
+        <p class="text-medium">
+            {% if current_user.is_admin() %}
+                Menampilkan semua post
+            {% else %}
+                Menampilkan post yang Anda buat
+            {% endif %}
+        </p>
+    </div>
+    
+    {% if posts %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Judul</th>
+                        <th>Penulis</th>
+                        <th>Tanggal</th>
+                        <th>Gambar</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for post in posts %}
+                    <tr>
+                        <td>{{ post.title }}</td>
+                        <td>{{ post.author.username }}</td>
+                        <td>{{ format_date(post.created_at) }}</td>
+                        <td>
+                            {% if post.image_filename %}
+                                <img src="{{ url_for('uploaded_file', filename=post.image_filename) }}" 
+                                     alt="{{ post.image_alt_text or 'Gambar post' }}" class="post-image-thumbnail">
+                            {% else %}
+                                <span class="text-medium">Tidak ada gambar</span>
+                            {% endif %}
+                        </td>
+                        <td class="post-actions">
+                            <a href="{{ url_for('view_post', post_id=post.id) }}" class="btn btn-sm btn-info">
+                                <i class="fas fa-eye"></i> Lihat
+                            </a>
+                            {% if current_user.can_edit_post(post) %}
+                            <a href="{{ url_for('edit_post', post_id=post.id) }}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            {% endif %}
+                            {% if current_user.can_delete_post(post) %}
+                            <button type="button" class="btn btn-sm btn-danger btn-delete" 
+                                    data-post-id="{{ post.id }}" data-post-title="{{ post.title }}">
+                                <i class="fas fa-trash"></i> Hapus
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="p-4 text-center">
+            <p>Belum ada post yang dibuat.</p>
+            <a href="{{ url_for('create_post') }}" class="btn btn-primary mt-2">
+                <i class="fas fa-plus-circle btn-icon"></i> Buat Post Pertama
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Modal konfirmasi hapus -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Konfirmasi Hapus</h3>
+            <button type="button" class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Apakah Anda yakin ingin menghapus post "<span id="deletePostTitle"></span>"?</p>
+            <p class="text-danger">Tindakan ini tidak dapat dibatalkan.</p>
+        </div>
+        <div class="modal-footer">
+            <form id="deleteForm" method="post" action="">
+                <button type="button" class="btn btn-outline-primary close-modal">Batal</button>
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash btn-icon"></i> Hapus
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('deleteModal');
+        const deleteButtons = document.querySelectorAll('.btn-delete');
+        const closeButtons = document.querySelectorAll('.close-modal');
+        const deleteForm = document.getElementById('deleteForm');
+        const deletePostTitle = document.getElementById('deletePostTitle');
+        
+        // Tampilkan modal saat tombol hapus diklik
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const postId = this.dataset.postId;
+                const postTitle = this.dataset.postTitle;
+                
+                deleteForm.action = `/post/delete/${postId}`;
+                deletePostTitle.textContent = postTitle;
+                modal.style.display = 'block';
+            });
+        });
+        
+        // Tutup modal saat tombol close diklik
+        closeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                modal.style.display = 'none';
+            });
+        });
+        
+        // Tutup modal saat klik di luar modal
+        window.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %}

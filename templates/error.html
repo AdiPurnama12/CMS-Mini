@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}Error {{ error_code }} - CMS Mini{% endblock %}
+
+{% block content %}
+<div class="card text-center">
+    <div class="card-header">
+        <h1 class="text-danger">Error {{ error_code }}</h1>
+    </div>
+    <div class="card-body">
+        <p class="mb-4">{{ error_message }}</p>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+            <i class="fas fa-home btn-icon"></i> Kembali ke Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

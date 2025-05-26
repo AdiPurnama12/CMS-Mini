@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'Edit Post' if is_edit else 'Buat Post Baru' }} - CMS Mini{% endblock %}
+
+{% block head_extra %}
+<style>
+    .preview-image {
+        max-width: 300px;
+        max-height: 200px;
+        margin-top: 10px;
+        border-radius: var(--border-radius);
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1>{{ 'Edit Post' if is_edit else 'Buat Post Baru' }}</h1>
+    </div>
+    
+    <form method="post" enctype="multipart/form-data" novalidate>
+        <div class="form-group">
+            <label for="title" class="form-label">Judul <span class="text-danger">*</span></label>
+            <input type="text" id="title" name="title" 
+                   class="form-control {% if errors.title %}is-invalid{% endif %}"
+                   value="{{ form_data.title }}" required>
+            {% if errors.title %}
+                <div class="invalid-feedback">{{ errors.title }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="content" class="form-label">Konten <span class="text-danger">*</span></label>
+            <textarea id="content" name="content" rows="10"
+                      class="form-control {% if errors.content %}is-invalid{% endif %}" required>{{ form_data.content }}</textarea>
+            {% if errors.content %}
+                <div class="invalid-feedback">{{ errors.content }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="image" class="form-label">Gambar {{ '(Opsional)' if not is_edit or not post.image_filename else '' }}</label>
+            <div class="file-input-wrapper">
+                <button type="button" class="file-input-button">
+                    <i class="fas fa-upload"></i> Pilih File
+                </button>
+                <input type="file" id="image" name="image" accept="image/*"
+                       class="{% if errors.image %}is-invalid{% endif %}">
+            </div>
+            {% if errors.image %}
+                <div class="invalid-feedback">{{ errors.image }}</div>
+            {% endif %}
+            
+            {% if is_edit and post.image_filename %}
+                <div class="mt-2">
+                    <p>Gambar saat ini:</p>
+                    <img src="{{ url_for('uploaded_file', filename=post.image_filename) }}" 
+                         alt="{{ post.image_alt_text }}" class="post-image">
+                </div>
+            {% endif %}
+            
+            <img id="imagePreview" class="preview-image" alt="Preview gambar">
+        </div>
+        
+        <div class="form-group">
+            <label for="image_alt_text" class="form-label">Alt Text untuk Gambar 
+                <span class="text-danger">{{ '*' if is_edit and post.image_filename else '' }}</span>
+                <small class="text-medium">(Deskripsi gambar untuk aksesibilitas)</small>
+            </label>
+            <input type="text" id="image_alt_text" name="image_alt_text" 
+                   class="form-control {% if errors.image_alt_text %}is-invalid{% endif %}"
+                   value="{{ form_data.image_alt_text }}" 
+                   {{ 'required' if is_edit and post.image_filename else '' }}>
+            {% if errors.image_alt_text %}
+                <div class="invalid-feedback">{{ errors.image_alt_text }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group d-flex justify-between">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary btn-cancel">
+                <i class="fas fa-arrow-left btn-icon"></i> Kembali
+            </a>
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-save btn-icon"></i> {{ 'Simpan Perubahan' if is_edit else 'Buat Post' }}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const imageInput = document.getElementById('image');
+        const imagePreview = document.getElementById('imagePreview');
+        const altTextInput = document.getElementById('image_alt_text');
+        
+        // Preview gambar saat dipilih
+        imageInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                    imagePreview.style.display = 'block';
+                    
+                    // Fokus ke alt text jika gambar dipilih
+                    altTextInput.focus();
+                }
+                
+                reader.readAsDataURL(this.files[0]);
+            } else {
+                imagePreview.style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %}
